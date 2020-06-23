@@ -2,7 +2,7 @@ import numpy as np
 import scipy.integrate as integ
 import sympy as sym
 import torch
-import torch.autograd as auto
+
 
 # Data generation using Boltzmann superposition integrals.
 def calculate_strain_stress(input_type, time_array, input_expr, E_mods, viscs, D_input_lambda=None):

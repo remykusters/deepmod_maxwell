@@ -2,6 +2,9 @@ import sys
 import numpy as np
 import torch
 from deepymod_maxwell.data.maxwell import calculate_strain_stress
+from deepymod_maxwell.model.library import auto_deriv
+
+import torch.autograd as auto
 
 np_seed = 2
 torch_seed = 0
@@ -67,15 +70,29 @@ reduced_target_array = scaled_target_array[reordered_row_indices, :][:number_of_
 time_tensor = torch.tensor(reduced_time_array, dtype=torch.float32, requires_grad=True)
 target_tensor = torch.tensor(reduced_target_array, dtype=torch.float32)
 
-print(time_tensor.shape, target_tensor.shape)
+
+
+input_data = scaled_input_torch_lambda(time_tensor)
+input_derivs = auto_deriv(time_tensor, input_data, 3)
+input_theta = torch.cat((input_data.detach(), input_derivs.detach()), dim=1)
 
 
 # Deepmod stuff
 from deepymod_maxwell import DeepMoD
 from deepymod_maxwell.model.func_approx import NN
-from deepymod_maxwell.model.library import Library1D
+from deepymod_maxwell.model.library import LibraryMaxwell
 from deepymod_maxwell.model.constraint import LeastSquares
 from deepymod_maxwell.model.sparse_estimators import Clustering, Threshold
 from deepymod_maxwell.training import train
 from deepymod_maxwell.training.sparsity_scheduler import Periodic
 
+network = NN(1, [30, 30, 30, 30], 1)  # Function approximator
+library = LibraryMaxwell(3, input_theta, 'strain') # Library function
+estimator = Threshold() # Sparse estimator 
+constraint = LeastSquares() # How to constrain
+model = DeepMoD(network, library, estimator, constraint) # Putting it all in the model
+
+# Running model
+sparsity_scheduler = Periodic(initial_epoch=20000, periodicity=500) # Defining when to apply sparsity
+optimizer = torch.optim.Adam(model.parameters(), betas=(0.99, 0.999), amsgrad=True) # Defining optimizer
+train(model, time_tensor, target_tensor, optimizer, sparsity_scheduler, max_iterations=50000) # Running

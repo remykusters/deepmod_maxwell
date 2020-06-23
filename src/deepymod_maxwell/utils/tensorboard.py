@@ -7,7 +7,7 @@ class Tensorboard():
     '''Tensorboard class for logging during deepmod training. '''
     def __init__(self, number_of_terms, log_dir):
         self.writer = SummaryWriter(log_dir)
-        self.writer.add_custom_scalars(custom_board(number_of_terms))
+        #self.writer.add_custom_scalars(custom_board(number_of_terms))
 
     def write(self, iteration, loss, loss_mse, loss_reg, loss_l1,
               constraint_coeff_vectors, unscaled_constraint_coeff_vectors, **kwargs):
@@ -15,6 +15,7 @@ class Tensorboard():
         self.writer.add_scalar('Total loss', loss, iteration)
         for idx in range(len(loss_mse)):
             self.writer.add_scalar(f'MSE {idx}', loss_mse[idx], iteration)
+        for idx in range(len(loss_reg)):
             self.writer.add_scalar(f'Regression {idx}', loss_reg[idx], iteration)
             self.writer.add_scalar(f'L1 {idx}', loss_l1[idx], iteration)
             for element_idx, element in enumerate(torch.unbind(constraint_coeff_vectors[idx])):  # Tensorboard doesnt have vectors, so we unbind and plot them in together in custom board
