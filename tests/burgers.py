@@ -1,13 +1,17 @@
-# Burgers, tests 1D input
-
 # General imports
 import numpy as np
 import torch
 
 # DeepMoD stuff
-from deepymod_torch.DeepMod import DeepMod
-from deepymod_torch.library_functions import library_1D_in
-from deepymod_torch.training import train_deepmod, train_mse
+from deepymod_torch import DeepMoD
+from deepymod_torch.model.func_approx import NN
+from deepymod_torch.model.library import Library1D
+from deepymod_torch.model.constraint import LeastSquares
+from deepymod_torch.model.sparse_estimators import Clustering, Threshold
+from deepymod_torch.training import train
+from deepymod_torch.training.sparsity_scheduler import Periodic
+from phimal_utilities.data import Dataset
+from phimal_utilities.data.burgers import BurgersDelta
 
 # Setting cuda
 if torch.cuda.is_available():
@@ -19,25 +23,24 @@ torch.manual_seed(0)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-# Loading data
-data = np.load('data/burgers.npy', allow_pickle=True).item()
-X = np.transpose((data['t'].flatten(), data['x'].flatten()))
-y = np.real(data['u']).reshape((data['u'].size, 1))
-number_of_samples = 1000
+# Making data
+v = 0.1
+A = 1.0
+x = np.linspace(-3, 4, 100)
+t = np.linspace(0.5, 5.0, 50)
 
-idx = np.random.permutation(y.size)
-X_train = torch.tensor(X[idx, :][:number_of_samples], dtype=torch.float32, requires_grad=True)
-y_train = torch.tensor(y[idx, :][:number_of_samples], dtype=torch.float32, requires_grad=True)
+x_grid, t_grid = np.meshgrid(x, t, indexing='ij')
+dataset = Dataset(BurgersDelta, v=v, A=A)
+X_train, y_train = dataset.create_dataset(x_grid.reshape(-1, 1), t_grid.reshape(-1, 1), n_samples=1000, noise=0.1)
 
-## Running DeepMoD
-config = {'n_in': 2, 'hidden_dims': [20, 20, 20, 20, 20, 20], 'n_out': 1, 'library_function': library_1D_in, 'library_args':{'poly_order': 2, 'diff_order': 2}}
+# Configuring model
+network = NN(2, [30, 30, 30, 30, 30], 1)  # Function approximator
+library = Library1D(poly_order=2, diff_order=3) # Library function
+estimator = Clustering() # Sparse estimator 
+constraint = LeastSquares() # How to constrain
+model = DeepMoD(network, library, estimator, constraint) # Putting it all in the model
 
-model = DeepMod(**config)
-optimizer = torch.optim.Adam([{'params': model.network_parameters(), 'lr':0.002}, {'params': model.coeff_vector(), 'lr':0.002}])
-#train_mse(model, X_train, y_train, optimizer, 1000)
-train_deepmod(model, X_train, y_train, optimizer, 1000, {'l1': 1e-5})
-
-
-print()
-print(model.fit.sparsity_mask) 
-print(model.fit.coeff_vector)
+# Running model
+sparsity_scheduler = Periodic(initial_epoch=1000, periodicity=100) # Defining when to apply sparsity
+optimizer = torch.optim.Adam(model.parameters(), betas=(0.99, 0.99), amsgrad=True) # Defining optimizer
+train(model, X_train, y_train, optimizer, sparsity_scheduler, log_dir='tests/runs/') # Running
