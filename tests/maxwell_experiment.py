@@ -86,6 +86,7 @@ target_tensor = torch.tensor(reduced_target_array, dtype=torch.float32)
 
 
 
+
 # Deepmod stuff
 from deepymod_maxwell import DeepMoD
 from deepymod_maxwell.model.func_approx import NN
@@ -97,11 +98,11 @@ from deepymod_maxwell.training.sparsity_scheduler import Periodic
 
 network = NN(1, [30, 30, 30, 30], 2)  # Function approximator
 library = LibraryMaxwellReal(3) # Library function
-estimator = Threshold() # Sparse estimator 
+estimator = Threshold(threshold=0.05) # Sparse estimator 
 constraint = LeastSquares() # How to constrain
 model = DeepMoD(network, library, estimator, constraint) # Putting it all in the model
 
 # Running model
-sparsity_scheduler = Periodic(initial_epoch=20000, periodicity=500) # Defining when to apply sparsity
+sparsity_scheduler = Periodic(initial_epoch=10000, periodicity=500) # Defining when to apply sparsity
 optimizer = torch.optim.Adam(model.parameters(), betas=(0.99, 0.999), amsgrad=True) # Defining optimizer
-train(model, time_tensor, target_tensor, optimizer, sparsity_scheduler, max_iterations=50000) # Running
+train(model, time_tensor, target_tensor, optimizer, sparsity_scheduler, max_iterations=50000, patience=1000, delta=0.01) # Running
