@@ -2,9 +2,9 @@ import torch
 import time
 from math import pi
 
-from deepymod_torch.utils.tensorboard import Tensorboard
-from deepymod_torch.utils.output import progress
-from deepymod_torch.training.convergence import Convergence
+from ..utils.tensorboard import Tensorboard
+from ..utils.output import progress
+from ..training.convergence import Convergence
 
 def train(model, data, target, optimizer, sparsity_scheduler, log_dir=None, max_iterations=10000, **convergence_kwargs):
     start_time = time.time()

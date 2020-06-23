@@ -3,13 +3,13 @@ import numpy as np
 import torch
 
 # DeepMoD stuff
-from deepymod_torch import DeepMoD
-from deepymod_torch.model.func_approx import NN
-from deepymod_torch.model.library import Library1D
-from deepymod_torch.model.constraint import LeastSquares
-from deepymod_torch.model.sparse_estimators import Clustering, Threshold
-from deepymod_torch.training import train
-from deepymod_torch.training.sparsity_scheduler import Periodic
+from deepymod_maxwell import DeepMoD
+from deepymod_maxwell.model.func_approx import NN
+from deepymod_maxwell.model.library import Library1D
+from deepymod_maxwell.model.constraint import LeastSquares
+from deepymod_maxwell.model.sparse_estimators import Clustering, Threshold
+from deepymod_maxwell.training import train
+from deepymod_maxwell.training.sparsity_scheduler import Periodic
 from phimal_utilities.data import Dataset
 from phimal_utilities.data.burgers import BurgersDelta
 

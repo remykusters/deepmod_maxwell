@@ -1,5 +1,5 @@
 import torch
-from deepymod_torch import Constraint
+from .deepmod import Constraint
 
 
 class LeastSquares(Constraint):
